@@ -1,0 +1,76 @@
+-- =========== 1. TABEL PROFILES (KHUSUS ADMIN) ===========
+-- Membuat tabel profiles yang terikat dengan auth.users bawaan dari Supabase
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  role TEXT DEFAULT 'admin' CHECK (role = 'admin'),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Mengaktifkan RLS untuk tabel profiles
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Policy Profiles: Hanya Admin yang sudah login yang bisa mengakses tabel ini
+CREATE POLICY "Admin dapat mengakses profiles" ON profiles
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- Trigger untuk membuat profil admin baru secara otomatis (opsional jika Anda membuat admin baru lewat dashboard authentication)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, role, name)
+  VALUES (new.id, 'admin', COALESCE(new.raw_user_meta_data->>'full_name', new.email, 'Admin Baru'));
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+
+-- =========== 2. TABEL DRIVERS (AKUN SOPIR MANUAL) ===========
+CREATE TABLE drivers (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  vehicle_plate TEXT NOT NULL,
+  phone_number TEXT,
+  vehicle_number TEXT,
+  route TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Mengaktifkan RLS untuk tabel drivers
+ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
+
+-- Policy Drivers: Admin bisa melakukan apa saja (CRUD Manajemen driver)
+CREATE POLICY "Admin dapat mengelola seluruh akun driver" ON drivers
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- Policy Drivers: Public/Anon bisa membaca (SELECT) untuk keperluan Login di aplikasi Sopir dan melihat data di peta Siswa.
+CREATE POLICY "Publik dapat membaca data driver" ON drivers
+  FOR SELECT USING (true);
+
+
+-- =========== 3. TABEL DRIVER_LOCATIONS (LOKASI REALTIME) ===========
+CREATE TABLE driver_locations (
+  driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE PRIMARY KEY,
+  latitude FLOAT NOT NULL,
+  longitude FLOAT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Mengaktifkan RLS untuk tabel driver_locations
+ALTER TABLE driver_locations ENABLE ROW LEVEL SECURITY;
+
+-- Policy Driver_Locations: Public/Anon bisa mengakses dan INSERT / UPDATE (karena sopir bukan "authenticated" oleh auth bawaan supabase, melainkan login manual).
+CREATE POLICY "Publik dapat membaca dan update lokasi sopir" ON driver_locations
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- =========================================================
+
+-- MENGAKTIFKAN FITUR REALTIME PADA TABEL 'driver_locations' AGAR MAP SISWA BISA BERGERAK
+-- Pastikan untuk menjalankan sintaks di bawah ini (jika gagal, Anda bisa mengaturnya manual di menu "Database -> Replication -> supabase_realtime")
+ALTER PUBLICATION supabase_realtime ADD TABLE driver_locations;

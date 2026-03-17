@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sopir - Transmit Lokasi</title>
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gojek: {
+                            green: '#00aa13',
+                            light: '#e5f6e8',
+                            dark: '#008b0f',
+                            black: '#1c1c1c',
+                            gray: '#f5f6f6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen font-sans text-gojek-black">
+
+    <!-- Login Area (hidden once logged in) -->
+    <div id="login-section" class="flex-grow flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-lg p-6">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gojek-light rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="gojek-green" class="w-8 h-8 text-gojek-green">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold">Masuk Sopir</h1>
+                <p class="text-gray-500 text-sm mt-1">Silakan masuk menggunakan akun Anda</p>
+            </div>
+            
+            <form id="driver-auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gojek-green focus:border-transparent transition-all" placeholder="Contoh: sopir_01" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1 text-gray-700">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gojek-green focus:border-transparent transition-all" placeholder="Kata sandi" required>
+                </div>
+                <button type="submit" class="w-full bg-gojek-green text-white font-bold py-3.5 rounded-full mt-2 hover:bg-gojek-dark transition-colors shadow-md active:scale-95 duration-150">
+                    Masuk Sekarang
+                </button>
+            </form>
+            <p id="login-error" class="hidden text-red-500 text-sm text-center mt-4 font-medium"></p>
+        </div>
+    </div>
+
+    <!-- Active Transmit Area (hidden default) -->
+    <div id="transmit-section" class="hidden flex-col h-screen">
+        <!-- Header Profile -->
+        <header class="bg-gojek-green text-white p-5 pt-8 rounded-b-[2rem] shadow-md relative z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight" id="driver-name-display">Bpk. Sopir</h2>
+                        <p class="text-xs text-gojek-light opacity-90" id="driver-plate-display">Plat - Rute</p>
+                    </div>
+                </div>
+                <button id="btn-logout" class="bg-white/20 hover:bg-white/30 p-2 text-sm rounded-full transition font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main State -->
+        <main class="flex-grow flex flex-col items-center justify-center p-6 -mt-6">
+            
+            <div class="w-full max-w-sm bg-white rounded-3xl shadow-lg p-6 text-center transform hover:scale-[1.02] transition-transform duration-300">
+                <div class="relative w-32 h-32 mx-auto mb-6">
+                    <!-- Ripple effect rings -->
+                    <div id="ripple-1" class="absolute inset-0 bg-green-200 rounded-full animate-ping opacity-0"></div>
+                    <div id="ripple-2" class="absolute inset-2 bg-green-300 rounded-full animate-ping opacity-0" style="animation-delay: 0.2s"></div>
+                    
+                    <!-- Main Button -->
+                    <button id="btn-toggle-location" class="relative z-10 w-full h-full bg-gray-200 text-gray-500 rounded-full shadow-lg flex flex-col items-center justify-center p-2 transition-colors duration-300 border-4 border-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-10 h-10 mb-1 pointer-events-none">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                        </svg>
+                        <span class="font-bold text-sm pointer-events-none" id="btn-text">MULAI</span>
+                    </button>
+                </div>
+
+                <h3 class="text-xl font-extrabold mb-1" id="status-title">Peta Belum Aktif</h3>
+                <p class="text-gray-500 text-sm mb-4" id="status-description">Tekan tombol di atas untuk mulai membagikan lokasi Anda kepada siswa.</p>
+
+                <div class="bg-gray-50 rounded-2xl p-4 text-left shadow-inner border border-gray-100">
+                    <p class="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wider">Lokasi GPS Anda Saat Ini</p>
+                    <p class="text-sm font-mono font-medium text-gojek-black break-all" id="gps-coords">-</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/driver.js"></script>
+</body>
+</html>
