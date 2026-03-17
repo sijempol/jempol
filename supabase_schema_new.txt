@@ -1,0 +1,41 @@
+-- =========== 4. TABEL ROUTES (INFORMASI RUTE) ===========
+CREATE TABLE routes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  description TEXT,
+  color_code TEXT DEFAULT '#00aa13',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Mengaktifkan RLS untuk tabel routes
+ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
+
+-- Policy Routes: Admin bisa melakukan CRUD 
+CREATE POLICY "Admin dapat mengelola rute" ON routes
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- Policy Routes: Public/Anon bisa membaca (SELECT)
+CREATE POLICY "Publik dapat membaca rute" ON routes
+  FOR SELECT USING (true);
+
+
+-- =========== 5. TABEL BUS_STOPS (POSISI HALTE) ===========
+CREATE TABLE bus_stops (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  latitude FLOAT NOT NULL,
+  longitude FLOAT NOT NULL,
+  route_id UUID REFERENCES routes(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Mengaktifkan RLS untuk tabel bus_stops
+ALTER TABLE bus_stops ENABLE ROW LEVEL SECURITY;
+
+-- Policy Bus_Stops: Admin bisa melakukan CRUD 
+CREATE POLICY "Admin dapat mengelola halte" ON bus_stops
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- Policy Bus_Stops: Public/Anon bisa membaca (SELECT)
+CREATE POLICY "Publik dapat membaca halte" ON bus_stops
+  FOR SELECT USING (true);
