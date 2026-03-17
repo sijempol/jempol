@@ -18,59 +18,69 @@ let routeCurrentPage = 1;
 const routePageSize = 5;
 let routeSearchQuery = '';
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAdminSession();
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("Admin Panel Initializing...");
+    try {
+        await checkAdminSession();
 
-    document.getElementById('admin-auth-form').addEventListener('submit', handleAdminLogin);
-    document.getElementById('admin-logout').addEventListener('click', handleAdminLogout);
-    
-    // Modal Listeners
-    document.getElementById('btn-add-driver').addEventListener('click', openModal);
-    document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-    document.getElementById('form-driver-data').addEventListener('submit', handleSaveDriver);
+        document.getElementById('admin-auth-form')?.addEventListener('submit', handleAdminLogin);
+        document.getElementById('admin-logout')?.addEventListener('click', handleAdminLogout);
+        
+        // Modal Listeners
+        document.getElementById('btn-add-driver')?.addEventListener('click', openModal);
+        document.getElementById('btn-close-modal')?.addEventListener('click', closeModal);
+        document.getElementById('form-driver-data')?.addEventListener('submit', handleSaveDriver);
 
-    // Route Listeners
-    document.getElementById('btn-add-route').addEventListener('click', openRouteModal);
-    document.getElementById('form-manage-route').addEventListener('submit', handleSaveRoute);
+        // Route Listeners
+        document.getElementById('btn-add-route')?.addEventListener('click', openRouteModal);
+        document.getElementById('form-manage-route')?.addEventListener('submit', handleSaveRoute);
 
-    // Driver Table Controls
-    document.getElementById('search-driver').addEventListener('input', (e) => {
-        driverSearchQuery = e.target.value;
-        driverCurrentPage = 1;
-        loadDrivers();
-    });
-    document.getElementById('filter-route').addEventListener('change', (e) => {
-        driverFilterRoute = e.target.value;
-        driverCurrentPage = 1;
-        loadDrivers();
-    });
-    document.getElementById('btn-prev-page').addEventListener('click', () => {
-        if (driverCurrentPage > 1) {
-            driverCurrentPage--;
+        // Complaints Listeners
+        document.getElementById('btn-add-complaint')?.addEventListener('click', openComplaintModal);
+        document.getElementById('form-complaint-data')?.addEventListener('submit', handleSaveComplaint);
+
+        // Driver Table Controls
+        document.getElementById('search-driver')?.addEventListener('input', (e) => {
+            driverSearchQuery = e.target.value;
+            driverCurrentPage = 1;
             loadDrivers();
-        }
-    });
-    document.getElementById('btn-next-page').addEventListener('click', () => {
-        driverCurrentPage++;
-        loadDrivers();
-    });
+        });
+        document.getElementById('filter-route')?.addEventListener('change', (e) => {
+            driverFilterRoute = e.target.value;
+            driverCurrentPage = 1;
+            loadDrivers();
+        });
+        document.getElementById('btn-prev-page')?.addEventListener('click', () => {
+            if (driverCurrentPage > 1) {
+                driverCurrentPage--;
+                loadDrivers();
+            }
+        });
+        document.getElementById('btn-next-page')?.addEventListener('click', () => {
+            driverCurrentPage++;
+            loadDrivers();
+        });
 
-    // Route Table Controls
-    document.getElementById('search-route').addEventListener('input', (e) => {
-        routeSearchQuery = e.target.value;
-        routeCurrentPage = 1;
-        loadRoutes();
-    });
-    document.getElementById('btn-prev-route').addEventListener('click', () => {
-        if (routeCurrentPage > 1) {
-            routeCurrentPage--;
+        // Route Table Controls
+        document.getElementById('search-route')?.addEventListener('input', (e) => {
+            routeSearchQuery = e.target.value;
+            routeCurrentPage = 1;
             loadRoutes();
-        }
-    });
-    document.getElementById('btn-next-route').addEventListener('click', () => {
-        routeCurrentPage++;
-        loadRoutes();
-    });
+        });
+        document.getElementById('btn-prev-route')?.addEventListener('click', () => {
+            if (routeCurrentPage > 1) {
+                routeCurrentPage--;
+                loadRoutes();
+            }
+        });
+        document.getElementById('btn-next-route')?.addEventListener('click', () => {
+            routeCurrentPage++;
+            loadRoutes();
+        });
+        console.log("Admin Panel Initialized Successfully.");
+    } catch (err) {
+        console.error("Initialization Error:", err);
+    }
 });
 
 async function checkAdminSession() {
@@ -126,19 +136,19 @@ function switchTab(tabId) {
 
     // Update Sidebar styling
     document.querySelectorAll('#sidebar-nav button').forEach(btn => {
-        btn.classList.remove('bg-purple-50', 'bg-gojek-light', 'text-gojek-green', 'text-purple-600');
+        btn.classList.remove('bg-purple-50', 'bg-gojek-light', 'bg-red-50', 'text-gojek-green', 'text-purple-600', 'text-red-600');
         
         let targetId = btn.getAttribute('data-tab');
         if (targetId === tabId) {
             if (targetId === 'tab-drivers') btn.classList.add('bg-gojek-light', 'text-gojek-green');
             if (targetId === 'tab-routes') btn.classList.add('bg-purple-50', 'text-purple-600');
+            if (targetId === 'tab-complaints') btn.classList.add('bg-red-50', 'text-red-600');
         }
     });
 
     if (tabId === 'tab-drivers') loadDrivers();
-    if (tabId === 'tab-routes') {
-        loadRoutes();
-    }
+    if (tabId === 'tab-routes') loadRoutes();
+    if (tabId === 'tab-complaints') loadComplaints();
 }
 
 function showDashboard() {
@@ -532,6 +542,110 @@ async function deleteRoute(id) {
     if(confirm('Yakin menghapus rute ini beserta seluruh halte yang terikat dengannya?')) {
         const { error } = await supabase.from('routes').delete().eq('id', id);
         if (error) alert("Gagal menghapus: " + error.message); else loadRoutes();
+    }
+}
+
+// ===================== COMPLAINTS MANAGEMENT =====================
+
+function openComplaintModal() {
+    console.log("Opening Complaint Modal...");
+    resetComplaintForm();
+    document.getElementById('complaint-modal-title').innerText = 'Tambah Nomor Aduan';
+    document.querySelector('#form-complaint-data button[type="submit"]').innerText = 'Simpan Data';
+    document.getElementById('complaint-modal').classList.remove('hidden');
+    document.getElementById('complaint-modal').classList.add('flex');
+}
+
+function closeComplaintModal() {
+    document.getElementById('complaint-modal').classList.add('hidden');
+    document.getElementById('complaint-modal').classList.remove('flex');
+}
+
+function resetComplaintForm() {
+    document.getElementById('form-complaint-data').reset();
+    document.getElementById('complaint-id').value = '';
+}
+
+async function loadComplaints() {
+    const tbody = document.getElementById('complaints-table-body');
+    tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-500">Memuat data...</td></tr>';
+
+    const { data: complaints, error } = await supabase
+        .from('complaints')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-500">${error.message}</td></tr>`;
+        return;
+    }
+
+    if (complaints.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-500">Belum ada nomor aduan.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    complaints.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-50 hover:bg-gray-50/50';
+        tr.innerHTML = `
+            <td class="p-4 font-bold text-gray-800">${c.name}</td>
+            <td class="p-4 text-sm text-gray-600">${c.phone_number}</td>
+            <td class="p-4 text-right flex justify-end gap-2">
+                <button onclick='editComplaint(${JSON.stringify(c).replace(/'/g, "&#39;")})' class="text-blue-600 bg-blue-50 p-2 rounded-lg hover:bg-blue-100 transition" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                </button>
+                <button onclick="deleteComplaint('${c.id}')" class="text-red-500 bg-red-50 p-2 rounded-lg hover:bg-red-100 transition" title="Hapus">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function handleSaveComplaint(e) {
+    e.preventDefault();
+    const id = document.getElementById('complaint-id').value;
+    const name = document.getElementById('complaint-name').value;
+    const number = document.getElementById('complaint-number').value;
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.innerText = 'Menyimpan...'; btn.disabled = true;
+
+    const row = { name, phone_number: number };
+    let error;
+
+    if (id) {
+        ({ error } = await supabase.from('complaints').update(row).eq('id', id));
+    } else {
+        ({ error } = await supabase.from('complaints').insert([row]));
+    }
+
+    btn.innerText = originalText; btn.disabled = false;
+    if (error) {
+        alert("Gagal menyimpan: " + error.message);
+    } else {
+        closeComplaintModal();
+        loadComplaints();
+    }
+}
+
+function editComplaint(c) {
+    openComplaintModal();
+    document.getElementById('complaint-id').value = c.id;
+    document.getElementById('complaint-name').value = c.name;
+    document.getElementById('complaint-number').value = c.phone_number;
+    document.getElementById('complaint-modal-title').innerText = 'Edit Nomor Aduan';
+    document.querySelector('#form-complaint-data button[type="submit"]').innerText = 'Update Data';
+}
+
+async function deleteComplaint(id) {
+    if (confirm('Yakin menghapus nomor aduan ini?')) {
+        const { error } = await supabase.from('complaints').delete().eq('id', id);
+        if (error) alert("Gagal menghapus: " + error.message); else loadComplaints();
     }
 }
 
