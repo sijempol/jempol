@@ -3,12 +3,25 @@
 
 let map;
 let markers = {}; // Menyimpan marker untuk setiap driver_id
+let studentMarker = null; // Marker untuk posisi siswa sendiri
 let fetchInterval = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     initMap();
+    initStudentLocation(); // Mulai lacak lokasi siswa
     await loadInitialActiveDrivers();
     
+    // Listener untuk tombol lokasi saya
+    document.getElementById('btn-my-location').addEventListener('click', () => {
+        if (studentMarker) {
+            const gps = studentMarker.getLatLng();
+            map.flyTo([gps.lat, gps.lng], 16, { animate: true, duration: 1.5 });
+            studentMarker.openPopup();
+        } else {
+            alert("Sedang mencari lokasi Anda...");
+        }
+    });
+
     // Polling data setiap 5 detik
     fetchInterval = setInterval(loadInitialActiveDrivers, 5000);
 });
@@ -42,6 +55,54 @@ const angkotIcon = L.divIcon({
     iconSize: [40, 40],
     iconAnchor: [20, 20]
 });
+
+// Custom Marker untuk Siswa (Warna Biru)
+const studentIcon = L.divIcon({
+    className: 'student-div-icon',
+    html: `<div class="relative flex items-center justify-center">
+            <div class="absolute w-8 h-8 bg-blue-500/30 rounded-full animate-ping-slow"></div>
+            <div class="bg-white border-2 border-blue-500 rounded-full p-1.5 shadow-lg flex items-center justify-center relative z-10" style="width: 34px; height: 34px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5 text-blue-500">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+                </svg>
+            </div>
+           </div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
+
+function initStudentLocation() {
+    if ("geolocation" in navigator) {
+        // Pantau lokasi secara terus menerus (watchPosition)
+        navigator.geolocation.watchPosition((position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            updateStudentMarker(lat, lng);
+        }, (error) => {
+            console.warn("Gagal mendapatkan lokasi siswa:", error.message);
+        }, {
+            enableHighAccuracy: true,
+            maximumAge: 30000,
+            timeout: 27000
+        });
+    }
+}
+
+function updateStudentMarker(lat, lng) {
+    if (studentMarker) {
+        studentMarker.setLatLng([lat, lng]);
+    } else {
+        studentMarker = L.marker([lat, lng], { 
+            icon: studentIcon,
+            zIndexOffset: 1000 // Supaya di atas angkot
+        }).addTo(map);
+        studentMarker.bindPopup('<b class="text-blue-600">Lokasi Saya</b>', { offset: [0, -10] });
+        
+        // Opsional: Center map ke siswa saat pertama kali ditemukan
+        map.setView([lat, lng], 15);
+    }
+}
 
 // Ambil lokasi semua driver (Dipanggil setiap 5 detik)
 async function loadInitialActiveDrivers() {

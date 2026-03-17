@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Manajemen Angkutan</title>
-    <!-- Tailwind CSS (via CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,11 +27,26 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet Configuration untuk Rute & Halte -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Draw -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    
+    <style>
+        /* Sembunyikan element berdasarkan active tab */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* Map UI */
+        #routeMap { height: 400px; width: 100%; border-radius: 12px; z-index: 10; }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans text-gojek-black antialiased">
 
     <!-- Admin Login Section -->
     <div id="admin-login-section" class="min-h-screen flex items-center justify-center p-4">
+        <!-- ... Sama seperti sebelumnya ... -->
         <div class="bg-white w-full max-w-md rounded-3xl shadow-xl p-8 border border-gray-100">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-gojek-black rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -46,11 +61,11 @@
             <form id="admin-auth-form" class="space-y-5">
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-700">Email Admin</label>
-                    <input type="email" id="admin-email" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gojek-black focus:bg-white transition-all font-medium" placeholder="admin@sekolah.com" required>
+                    <input type="email" id="admin-email" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gojek-black focus:bg-white transition-all font-medium" required>
                 </div>
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-700">Password</label>
-                    <input type="password" id="admin-password" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gojek-black focus:bg-white transition-all font-medium" placeholder="••••••••" required>
+                    <input type="password" id="admin-password" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gojek-black focus:bg-white transition-all font-medium" required>
                 </div>
                 <button type="submit" class="w-full bg-gojek-black text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 transition-colors shadow-lg mt-4">
                     Masuk Ke Sistem
@@ -60,121 +75,248 @@
         </div>
     </div>
 
-    <!-- Admin Dashboard (hidden default) -->
-    <div id="admin-dashboard-section" class="hidden min-h-screen bg-gray-50">
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard-section" class="hidden min-h-screen bg-gray-50 flex flex-col md:flex-row">
         
-        <!-- Sidebar Navigation (Responsive as header in mobile) -->
-        <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-            <div class="flex items-center gap-3">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white border-r border-gray-200 shadow-sm flex-shrink-0">
+            <div class="p-6 flex items-center gap-3 border-b border-gray-100">
                 <div class="w-10 h-10 bg-gojek-black rounded-lg flex items-center justify-center text-white font-bold">A</div>
                 <h2 class="font-extrabold text-xl tracking-tight">Admin<span class="text-gojek-green">Panel</span></h2>
             </div>
-            <button id="admin-logout" class="text-sm font-bold text-red-500 hover:text-red-700 px-4 py-2 rounded-lg hover:bg-red-50 transition">Keluar</button>
-        </nav>
-
-        <main class="max-w-6xl mx-auto p-6 lg:p-8">
-            <div class="flex justify-between items-end mb-8">
-                <div>
-                    <h2 class="text-2xl font-bold mb-1">Manajemen Sopir</h2>
-                    <p class="text-gray-500 text-sm">Kelola daftar akun sopir yang dapat mengakses aplikasi pelacakan.</p>
-                </div>
-                <button id="btn-add-driver" class="bg-gojek-green text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-2 hover:bg-gojek-dark transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Tambah Sopir
+            <nav class="p-4 space-y-2" id="sidebar-nav">
+                <!-- Nav Item: Akun Sopir -->
+                <button onclick="switchTab('tab-drivers')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-gray-600 hover:bg-gojek-light hover:text-gojek-green transition-colors text-left" data-tab="tab-drivers">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                    Akun Sopir
                 </button>
+                <!-- Nav Item: Manajemen Rute -->
+                <button onclick="switchTab('tab-routes')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-gray-600 hover:bg-purple-50 hover:text-purple-600 transition-colors text-left" data-tab="tab-routes">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>
+                    Manajemen Rute
+                </button>
+            </nav>
+            <div class="p-4 mt-auto">
+                <button id="admin-logout" class="w-full text-sm font-bold text-red-500 hover:text-red-700 px-4 py-3 rounded-xl hover:bg-red-50 transition border border-red-100 bg-white">Keluar Sistem</button>
+            </div>
+        </aside>
+
+        <main class="flex-grow p-6 lg:p-8 overflow-y-auto w-full max-w-6xl mx-auto">
+            
+            <!-- ===================== TAB: DATA SOPIR ===================== -->
+            <div id="tab-drivers" class="tab-content active">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">Manajemen Sopir</h2>
+                        <p class="text-gray-500 text-sm">Kelola daftar akun sopir armada.</p>
+                    </div>
+                    <button id="btn-add-driver" class="bg-gojek-green text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-2 hover:bg-gojek-dark transition-colors shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> Tambah Sopir
+                    </button>
+                </div>
+                
+                <!-- Search & Filter Controls -->
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="relative flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" id="search-driver" placeholder="Cari nama, username, atau plat nomor..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gojek-green focus:border-transparent transition bg-white text-sm">
+                    </div>
+                    <div class="w-full md:w-64 shrink-0 relative">
+                         <!-- Akan diisi otomatis oleh JS berdasarkan data rute unik atau tabel routes -->
+                        <select id="filter-route" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gojek-green bg-white text-sm appearance-none cursor-pointer">
+                            <option value="">Semua Rute</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <!-- Table Card Sopir (Existing) -->
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100">
+                                    <th class="p-4 font-bold text-gray-600 text-sm">Info Sopir</th>
+                                    <th class="p-4 font-bold text-gray-600 text-sm">Kendaraan & Jalur</th>
+                                    <th class="p-4 font-bold text-gray-600 text-sm">Kontak Telepon</th>
+                                    <th class="p-4 font-bold text-gray-600 text-sm">Akun Login</th>
+                                    <th class="p-4 font-bold text-gray-600 text-sm text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="driver-table-body" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="p-8 text-center text-gray-500 font-medium">Memuat data sopir...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                        <span class="text-sm text-gray-500" id="pagination-info">Menampilkan 0-0 dari 0 data</span>
+                        <div class="flex gap-2">
+                            <button id="btn-prev-page" class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+                            <button id="btn-next-page" class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Selanjutnya</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Table Card -->
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 border-b border-gray-100">
-                                <th class="p-4 font-bold text-gray-600 text-sm">Info Sopir</th>
-                                <th class="p-4 font-bold text-gray-600 text-sm">Kendaraan & Jalur</th>
-                                <th class="p-4 font-bold text-gray-600 text-sm">Kontak</th>
-                                <th class="p-4 font-bold text-gray-600 text-sm">Akun Login</th>
-                                <th class="p-4 font-bold text-gray-600 text-sm text-right">Aksi</th>
+            <!-- ===================== TAB: ROUTES ===================== -->
+            <div id="tab-routes" class="tab-content">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold mb-1">Pemetaan Rute</h2>
+                        <p class="text-gray-500 text-sm">Kelola dan gambar garis rute perjalanan armada.</p>
+                    </div>
+                    <button id="btn-add-route" class="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center gap-2 hover:bg-purple-700 transition-colors shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> Tambah Rute
+                    </button>
+                </div>
+
+
+
+                <!-- Table Routes Header & Search -->
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4 mt-10">
+                    <h3 class="font-bold text-gray-800">Daftar Rute Terdaftar</h3>
+                    <div class="relative w-full md:w-72">
+                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" id="search-route" placeholder="Cari nama rute atau deskripsi..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white text-sm shadow-sm group-hover:border-purple-300">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="p-4 font-bold text-gray-500 text-sm">Nama Rute</th>
+                                <th class="p-4 font-bold text-gray-500 text-sm">Keterangan</th>
+                                <th class="p-4 font-bold text-gray-500 text-sm">Visual Garis</th>
+                                <th class="p-4 font-bold text-gray-500 text-sm text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="driver-table-body" class="divide-y divide-gray-100">
-                            <!-- Populated by JS -->
-                            <tr>
-                                <td colspan="5" class="p-8 text-center text-gray-500 font-medium">Memuat data sopir...</td>
-                            </tr>
+                        <tbody id="routes-table-body">
+                           <tr><td colspan="4" class="p-8 text-center text-gray-500">Memuat rute...</td></tr>
                         </tbody>
                     </table>
+                    
+                    <!-- Route Pagination Controls -->
+                    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                        <span class="text-xs text-gray-500" id="route-pagination-info">Menampilkan 0-0 dari 0 data</span>
+                        <div class="flex gap-2">
+                            <button id="btn-prev-route" class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+                            <button id="btn-next-route" class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Selanjutnya</button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- TAb content Removed -->
+
         </main>
     </div>
 
-    <!-- Modal Form (Hidden) -->
+    <!-- Modal Driver (Existing) -->
+    <!-- (Isi Modal Driver Disembunyikan Agar Singkat, Sama seperti koding sebelumnya) -->
+    <!-- Modal Driver Start -->
     <div id="driver-modal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden transform transition-all">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 class="font-bold text-xl" id="modal-title">Tambah Akun Sopir</h3>
                 <button type="button" id="btn-close-modal" class="text-gray-400 hover:text-gray-600 bg-white p-2 rounded-full shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             <form id="form-driver-data" class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                <!-- Username & Password -->
+                <input type="hidden" id="form-driver-id">
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Username Login</label>
-                        <input type="text" id="form-username" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Password</label>
-                        <input type="text" id="form-password" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium text-red-600" required>
-                        <p class="text-[10px] text-gray-400 mt-1">*Bisa dilihat oleh admin</p>
-                    </div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Username Login</label><input type="text" id="form-username" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium" required></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label><input type="text" id="form-password" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium text-red-600" required></div>
                 </div>
-
-                <hr class="border-gray-100 my-2">
-
-                <!-- User Profile -->
-                <div>
-                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Lengkap Sopir</label>
-                     <input type="text" id="form-fullname" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium" required>
-                </div>
-
+                <hr class="border-gray-100">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap Sopir</label><input type="text" id="form-fullname" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium" required></div>
                 <div class="grid grid-cols-2 gap-4">
-                     <div>
-                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nomor HP</label>
-                         <input type="text" id="form-phone" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium" required>
-                    </div>
-                     <div>
-                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Plat Nomor</label>
-                         <input type="text" id="form-plate" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium uppercase" required>
-                    </div>
+                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nomor HP</label><input type="text" id="form-phone" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium"></div>
+                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Plat Nomor</label><input type="text" id="form-plate" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium uppercase" required></div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
-                     <div>
-                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nomor Angkutan</label>
-                         <input type="text" id="form-vehiclenum" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium" placeholder="Misal: 01 / 02">
-                    </div>
-                     <div>
-                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jalur/Rute</label>
-                         <input type="text" id="form-route" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-gojek-green focus:ring-1 focus:ring-gojek-green outline-none font-medium" required>
-                    </div>
+                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nomor Angkutan</label><input type="text" id="form-vehiclenum" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium"></div>
+                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jalur/Rute</label><input type="text" id="form-route" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 outline-none font-medium" required></div>
                 </div>
-
-                <button type="submit" class="w-full bg-gojek-green text-white font-bold py-3.5 rounded-xl hover:bg-gojek-dark shadow-md mt-6 transition-colors">
-                    Simpan Data Sopir
-                </button>
+                <button type="submit" class="w-full bg-gojek-green text-white font-bold py-3.5 rounded-xl hover:bg-gojek-dark shadow-md mt-6 transition-colors">Simpan Data Sopir</button>
             </form>
         </div>
     </div>
+    <!-- Modal Driver End -->
 
-
+    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- MODAL: MANAGE ROUTE -->
+    <div id="route-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div>
+                    <h3 id="route-modal-title" class="text-xl font-extrabold text-gray-800">Manajemen Rute</h3>
+                    <p class="text-xs text-gray-500">Gambar dan simpan rute perjalanan angkutan.</p>
+                </div>
+                <button onclick="closeRouteModal()" class="p-2 hover:bg-white hover:shadow-sm rounded-xl transition text-gray-400 hover:text-red-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-grow overflow-y-auto p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Form -->
+                    <form id="form-manage-route" class="lg:col-span-4 space-y-5">
+                        <input type="hidden" id="route-id">
+                        <input type="hidden" id="route-geojson" required>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Nama Rute</label>
+                            <input type="text" id="route-name" placeholder="Contoh: Jalur 1 Tipe F" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-purple-500 font-bold text-gray-700" required>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Warna Garis</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" id="route-color" value="#00aa13" class="w-14 h-12 shrink-0 p-1.5 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer">
+                                <span class="text-xs text-gray-400 font-medium italic">Klik kotak untuk memilih warna garis di peta.</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Informasi Jalan / Deskripsi</label>
+                            <textarea id="route-description" rows="5" placeholder="Contoh: Jln. Sudirman - Jln. Ahmad Yani..." class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-purple-500 font-medium text-xs leading-relaxed"></textarea>
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex gap-3">
+                            <div class="text-blue-500 shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <p class="text-[11px] text-blue-700 font-medium leading-relaxed">
+                                <b>Cara Menggambar:</b> Gunakan alat bantu di pojok kiri atas Peta (icon garis) untuk menarik garis rute. Klik ganda saat sudah selesai menggambar.
+                            </p>
+                        </div>
+                        
+                        <div class="flex gap-3 pt-2">
+                            <button type="button" onclick="closeRouteModal()" class="w-1/3 bg-gray-100 text-gray-600 font-bold py-3 px-4 rounded-xl hover:bg-gray-200 transition">Batal</button>
+                            <button type="submit" class="flex-grow bg-purple-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-purple-700 transition shadow-lg shadow-purple-100">Simpan Rute</button>
+                        </div>
+                    </form>
+
+                    <!-- Map container -->
+                    <div class="lg:col-span-8 bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden relative min-h-[400px]">
+                        <div id="routeMap" class="absolute inset-0 z-10 w-full h-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script tags and closing body -->
     <script src="js/supabase-client.js"></script>
     <script src="js/admin.js"></script>
 </body>

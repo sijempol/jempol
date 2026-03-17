@@ -47,6 +47,15 @@
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
         }
+
+        /* Pulsing animation for student icon */
+        @keyframes ping-slow {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .animate-ping-slow {
+            animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden text-gojek-black flex flex-col relative">
@@ -69,6 +78,14 @@
     <!-- Map Container -->
     <main class="flex-grow relative bg-gray-200">
         <div id="map"></div>
+        
+        <!-- Fab Button: Center My Location -->
+        <button id="btn-my-location" class="absolute bottom-64 right-4 z-[100] bg-white p-3 rounded-full shadow-lg border border-gray-100 text-blue-500 hover:bg-blue-50 transition active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+        </button>
     </main>
 
     <!-- Bottom Action Card (Gojek Bottom Sheet Style) -->

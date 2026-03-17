@@ -1,8 +1,8 @@
--- =========== 4. TABEL ROUTES (INFORMASI RUTE) ===========
 CREATE TABLE routes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   description TEXT,
+  coordinates JSONB, 
   color_code TEXT DEFAULT '#00aa13',
   created_at TIMESTAMPTZ DEFAULT now()
 );
