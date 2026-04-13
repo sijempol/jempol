@@ -252,23 +252,42 @@ let isRouteFilterPopulated = false;
 async function populateRouteFilter() {
     if (isRouteFilterPopulated) return;
     const filterSelect = document.getElementById('filter-route');
+    const formSelect = document.getElementById('form-route');
     
     // Get unique routes from the routes table
     const { data: routes, error } = await supabase.from('routes').select('name').order('name');
     
     if (error || !routes) return;
 
-    routes.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r.name;
-        opt.innerText = r.name;
-        filterSelect.appendChild(opt);
-    });
+    // Clear existing options except the first one
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">Semua Rute</option>';
+        routes.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.name;
+            opt.innerText = r.name;
+            filterSelect.appendChild(opt);
+        });
+    }
+
+    if (formSelect) {
+        formSelect.innerHTML = '<option value="">Pilih Rute...</option>';
+        routes.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.name;
+            opt.innerText = r.name;
+            formSelect.appendChild(opt);
+        });
+    }
     
     isRouteFilterPopulated = true;
 }
 
-function openModal() {
+async function openModal() {
+    // Ensure dropdowns are populated
+    isRouteFilterPopulated = false; // Force re-population to catch newly added routes
+    await populateRouteFilter();
+
     document.getElementById('form-driver-data').reset();
     document.getElementById('form-driver-id').value = '';
     document.getElementById('modal-title').innerText = 'Tambah Akun Sopir';
@@ -283,7 +302,11 @@ function closeModal() {
     document.getElementById('driver-modal').classList.remove('flex');
 }
 
-function editDriver(driverObj) {
+async function editDriver(driverObj) {
+    // Ensure dropdowns are populated
+    isRouteFilterPopulated = false; // Force re-population to catch newly added routes
+    await populateRouteFilter();
+
     document.getElementById('form-driver-id').value = driverObj.id;
     document.getElementById('form-username').value = driverObj.username;
     document.getElementById('form-password').value = driverObj.password;

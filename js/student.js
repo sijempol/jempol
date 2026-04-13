@@ -4,6 +4,8 @@
 let map;
 let markers = {}; // Menyimpan marker untuk setiap driver_id
 let studentMarker = null; // Marker untuk posisi siswa sendiri
+let activeRouteLayer = null; // Layer rute yang sedang aktif di peta
+let activeRouteName = null; // Nama rute yang sedang aktif
 let fetchInterval = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -185,6 +187,11 @@ function updateMarker(driverId, lat, lng, driverData) {
             </div>
         `;
         m.bindPopup(popupContent, { offset: [0, -10] });
+
+        // Tambahkan listener klik pada marker untuk menampilkan rute
+        m.on('click', () => {
+            showDriverRoute(driverData.route);
+        });
         
         markers[driverId] = {
             marker: m,
@@ -230,8 +237,65 @@ function renderDriverToList(driverId, driverData) {
             const gps = markers[driverId].marker.getLatLng();
             map.flyTo([gps.lat, gps.lng], 16, { animate: true, duration: 1.5 });
             markers[driverId].marker.openPopup();
+            
+            // Tampilkan rute armada ini
+            showDriverRoute(driverData.route);
         }
     });
 
     listContainer.appendChild(el);
+}
+
+/**
+ * Menampilkan rute angkutan di peta dengan efek transparan
+ */
+async function showDriverRoute(routeName) {
+    if (!routeName) return;
+    
+    // Jika rute ini sudah aktif, jangan render ulang
+    if (activeRouteName === routeName) return;
+
+    // Bersihkan rute sebelumnya jika ada
+    if (activeRouteLayer) {
+        map.removeLayer(activeRouteLayer);
+        activeRouteLayer = null;
+    }
+
+    try {
+        // Ambil data rute dari Supabase
+        const { data: routeData, error } = await supabase
+            .from('routes')
+            .select('*')
+            .eq('name', routeName)
+            .single();
+
+        if (error || !routeData) {
+            console.warn(`Rute '${routeName}' tidak ditemukan atau belum digambar.`);
+            return;
+        }
+
+        if (routeData.coordinates) {
+            // Gambar GeoJSON ke peta
+            activeRouteLayer = L.geoJSON(routeData.coordinates, {
+                style: function() {
+                    return {
+                        color: routeData.color_code || '#00aa13',
+                        weight: 6,
+                        opacity: 0.35, // Transparan sesuai permintaan user
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        dashArray: '1, 10' // Opsional: Beri titik-titik kecil agar terlihat premium
+                    };
+                }
+            }).addTo(map);
+
+            // Supaya rute selalu berada di bawah marker (Z-Index Lower)
+            activeRouteLayer.bringToBack();
+            
+            activeRouteName = routeName;
+            console.log(`Menampilkan rute: ${routeName}`);
+        }
+    } catch (err) {
+        console.error("Gagal menampilkan rute:", err);
+    }
 }
