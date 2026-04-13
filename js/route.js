@@ -59,6 +59,11 @@ async function fetchAndDisplayRoutes() {
     routes.forEach(route => {
         const item = document.createElement('div');
         item.className = 'group flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md hover:border-gojek-green transition-all cursor-pointer';
+        item.onclick = (e) => {
+            // Prevent modal if clicking the map button
+            if (e.target.closest('button')) return;
+            showRouteDetails(route.id);
+        };
         
         const coordCount = route.coordinates && route.coordinates.coordinates ? route.coordinates.coordinates.length : 0;
         
@@ -119,5 +124,41 @@ function drawRouteOnMap(routeId) {
     // Zoom animasi fitting viewport map ke bounding box route tersebut
     const bounds = drawnRouteLayer.getBounds();
     // Tambahkan extra padding bawah agar tidak tertutup menu list (bottom sheet)
-    map.flyToBounds(bounds, { paddingBottomRight: [0, 300], paddingTopLeft: [20, 100], duration: 1 });
+    map.flyToBounds(bounds, { paddingBottomRight: [0, 300], paddingTopLeft: [20, 100], duration: 1.5 });
+}
+
+async function showRouteDetails(routeId) {
+    const route = allRoutes.find(r => r.id === routeId);
+    if (!route) return;
+
+    const modal = document.getElementById('route-modal');
+    const modalName = document.getElementById('modal-route-name');
+    const modalDesc = document.getElementById('modal-route-description');
+    const modalColorStrip = document.getElementById('modal-color-strip');
+    const modalBadge = document.getElementById('modal-route-badge');
+    const modalBtnMap = document.getElementById('modal-btn-map');
+
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Set basic info
+    modalName.innerText = route.name;
+    modalDesc.innerText = route.description || 'Tidak ada deskripsi tersedia untuk rute ini.';
+    modalColorStrip.style.backgroundColor = route.color_code;
+    modalBadge.style.backgroundColor = `${route.color_code}20`;
+    modalBadge.style.color = route.color_code;
+    modalBadge.innerText = `RUTE ${route.name.split(' ')[1] || 'AKTIF'}`;
+
+    // Set map button action
+    modalBtnMap.onclick = () => {
+        drawRouteOnMap(route.id);
+        closeRouteModal();
+    };
+}
+
+function closeRouteModal() {
+    const modal = document.getElementById('route-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }

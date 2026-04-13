@@ -70,6 +70,52 @@
         </div>
     </section>
 
+    <!-- Route Detail Modal -->
+    <div id="route-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 sm:p-6">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeRouteModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative overflow-hidden transform transition-all flex flex-col max-h-[85vh]">
+            <!-- Header with Color Strip -->
+            <div id="modal-color-strip" class="h-2 w-full bg-gojek-green"></div>
+            
+            <div class="p-6 pb-4 flex justify-between items-start">
+                <div>
+                    <div id="modal-route-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold mb-2">
+                        RUTE AKTIF
+                    </div>
+                    <h2 id="modal-route-name" class="text-2xl font-extrabold text-gray-900 leading-tight">Nama Rute</h2>
+                </div>
+                <button onclick="closeRouteModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="px-6 overflow-y-auto flex-grow pb-6">
+                <!-- Description Section -->
+                <section>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 text-[10px]">Deskripsi Jalur</h3>
+                    <p id="modal-route-description" class="text-gray-600 text-sm leading-relaxed">
+                        Detail deskripsi rute akan muncul di sini.
+                    </p>
+                </section>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="p-6 pt-0 mt-auto border-t border-gray-50 bg-gray-50/50">
+                <button id="modal-btn-map" class="w-full mt-4 bg-gojek-green text-white font-bold py-4 rounded-2xl shadow-lg shadow-gojek-green/20 hover:bg-gojek-dark transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                    </svg>
+                    Tampilkan di Peta
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
